@@ -1,1 +1,1 @@
-# neural-network-pruning
+# pruning
