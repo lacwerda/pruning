@@ -72,9 +72,11 @@ class Prune(ABC):
         """
         pass
 
-    def prune(self):
-        """
-        docstring
+    def prune(self) -> (np.array, Sequential | Layer):
+        """Prunes weights according to mask.
+
+        This method returns the mask used to prune the object and the pruned
+        object.
         """
         new_mask: np.array = self.generate_personalized_mask()
         self.mask = np.multiply(new_mask, self.mask)
