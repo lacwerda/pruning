@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import List
+from typing import List, Tuple
 from tensorflow import keras
 
 from tensorflow.keras import Sequential
@@ -23,7 +23,12 @@ class Prune(ABC):
         self.weights: np.array= np.array(
             [w.numpy() for w in self.object.weights], dtype=object)
 
-        self.mask: np.array = self.unpruned_mask(self.object)
+        self.mask: np.array = self.unpruned_mask()
+
+        for attr, value in self.__dict__.items():
+            if value is None:
+                raise Exception(f'Attribute {attr} in class '
+                                f'{self.__class__.__name__} can not be None.')
 
         self.__dict__.update(kwargs)
 
@@ -48,17 +53,17 @@ class Prune(ABC):
 
         return flatten_weight_list
 
-    @staticmethod
-    def unpruned_mask(object) -> np.array:
+    def unpruned_mask(self) -> np.array:
         """Generates initial unpruned mask filled with ones.
 
         The mask is later used to zero pruned weights. It is applied by
         calculating the Hadamard product between the weights in each layer and
         the mask.
         """
-        resolve = [np.ones(
-            weight_array.numpy().shape) for weight_array in object.weights]
-        return np.array(resolve, dtype=object)
+        return np.array(
+            [np.ones(weight_array.shape) for weight_array in self.weights],
+            dtype=object
+            )
 
     @abstractmethod
     def generate_personalized_mask(self, **kwargs) -> np.array:
@@ -72,7 +77,7 @@ class Prune(ABC):
         """
         pass
 
-    def prune(self) -> (np.array, Sequential | Layer):
+    def prune(self) -> Tuple[np.array, Sequential | Layer]:
         """Prunes weights according to mask.
 
         This method returns the mask used to prune the object and the pruned
@@ -82,7 +87,7 @@ class Prune(ABC):
         self.mask = np.multiply(new_mask, self.mask)
 
         self.weights: np.array = np.multiply(self.weights, self.mask)
-        self.object: Sequential | Layer = self.object.set_weights(self.weights)
+        self.object.set_weights(self.weights)
 
         return self.mask, self.object
 
